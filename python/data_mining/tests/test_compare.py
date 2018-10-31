@@ -73,6 +73,17 @@ class TestMinHashing(object):
         expected_signatures = [[1, 0], [3, 2], [0, 0], [1, 0]]
         assert_equal(signatures, expected_signatures)
 
+    def test_more(self):
+        hash_sets = [
+            {0, 3, 6, 9},
+            {2, 3, 4},
+            {1, 3, 2, 7, 9, 0},
+            {0, 2, 3, 4}
+        ]
+        mh = self.test_class(n_rows=10, n_hash_fs=3)
+
+        signatures = mh(hash_sets)
+
 
 def test_get_estimated_jaccard_similarity_from_signatures():
     from data_mining.compare import (
