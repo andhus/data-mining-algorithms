@@ -1,7 +1,10 @@
 from __future__ import print_function, division
 
-
 import argparse
+import os
+
+from contextlib import contextmanager
+from time import time
 
 
 def get_lsh_argument_parser(
@@ -42,3 +45,32 @@ def get_lsh_argument_parser(
         help="TODO"
     )
     return parser
+
+
+class _TimedContext(object):
+
+    def __init__(self, time_f=time):
+        self.time_f = time_f
+
+    def __enter__(self):
+        self.start = self.time_f()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end = self.time_f()
+
+    @property
+    def elapsed(self):
+        return self.end - self.start
+
+
+def timer():
+    return _TimedContext()
+
+
+def mkdirp(path):
+    if os.path.exists(path):
+        if not os.path.isdir(path):
+            raise IOError("{} exists and is not a directory".format(path))
+    else:
+        os.mkdir(path)

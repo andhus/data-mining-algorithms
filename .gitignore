@@ -108,3 +108,7 @@ venv.bak/
 
 # Datasets
 /datasets/NewsGroups/*
+
+# Script Outputs
+/python/scripts/homework_1/benchmark
+
