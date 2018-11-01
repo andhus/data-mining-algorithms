@@ -1,6 +1,5 @@
 from __future__ import print_function, division
 
-import random
 from functools import partial
 from collections import defaultdict
 
@@ -175,3 +174,14 @@ def get_jsim_and_approx_jsim(top_similar_index, hash_sets, signatures):
             }) for doc_idx_b in top_similar
         ] for doc_idx_a, top_similar in top_similar_index.iteritems()
     }
+
+
+def get_approximation_diffs(similarities_index):
+    """TODO
+    """
+    flat_sims = sum(similarities_index.values(), [])
+    true_jsim = np.array([s[1]['jsim'] for s in flat_sims])
+    approx_jsim = np.array([s[1]['jsim_approx'] for s in flat_sims])
+    diffs = approx_jsim - true_jsim
+
+    return diffs
