@@ -73,17 +73,6 @@ class TestMinHashing(object):
         expected_signatures = [[1, 0], [3, 2], [0, 0], [1, 0]]
         assert_equal(signatures, expected_signatures)
 
-    def test_more(self):
-        hash_sets = [
-            {0, 3, 6, 9},
-            {2, 3, 4},
-            {1, 3, 2, 7, 9, 0},
-            {0, 2, 3, 4}
-        ]
-        mh = self.test_class(n_rows=10, n_hash_fs=3)
-
-        signatures = mh(hash_sets)
-
 
 def test_get_estimated_jaccard_similarity_from_signatures():
     from data_mining.compare import (
@@ -94,3 +83,108 @@ def test_get_estimated_jaccard_similarity_from_signatures():
     estimated_jsim = test_function(s_sign, t_sign)
     expected_estimated_jsim = 2 / 5
     assert_equal(estimated_jsim, expected_estimated_jsim)
+
+
+class TestLocalitySensitiveHashing(object):
+    from data_mining.compare import LocalitySensitiveHashing as test_class
+
+    def test_get_groups(self):
+        signatures = [
+            [1, 2, 3, 4],
+            [1, 2, 3, 4],
+            [2, 3, 4, 2],
+            [0, 0, 3, 0]
+        ]
+
+        def hash_f(x):
+            mapping = {
+                (1, 2): 0,
+                (3, 4): 1,
+                (2, 3): 2,
+                (4, 2): 3,
+                (0, 0): 4,
+                (3, 0): 1  # special case
+            }
+            return mapping[x]
+
+        lsh = self.test_class(n_bands=2, hash_f=hash_f)
+        band_groups = lsh.get_band_groups(signatures)
+        expected_band_groups = [
+            {
+                0: [0, 1],
+                2: [2],
+                4: [3]
+            },
+            {
+                1: [0, 1, 3],
+                3: [2]
+            }
+        ]
+        assert_equal(band_groups, expected_band_groups)
+
+    def test_get_top_similar_index_from_band_groups(self):
+        band_groups = [
+            {
+                0: [0, 1, 2],
+                3: [4, 5],
+                4: [6],
+                5: [7],
+            },
+            {
+                9: [6, 0]
+            }
+        ]
+
+        top_similar_index = self.test_class.get_top_similar_index_from_band_groups(
+            band_groups
+        )
+        expected_top_similar_index = {
+            0: [1, 2, 6],
+            1: [0, 2],
+            2: [0, 1],
+            4: [5],
+            5: [4],
+            6: [0]
+            # doc 7 never added since it has no similar docs
+        }
+        assert_equal(top_similar_index, expected_top_similar_index)
+
+    def test_get_top_similar_index(self):
+        signatures = [
+            [1, 2, 3, 4],
+            [1, 2, 3, 4],
+            [2, 3, 4, 2],
+            [0, 0, 3, 0]
+        ]
+
+        def hash_f(x):
+            mapping = {
+                (1, 2): 0,
+                (3, 4): 1,
+                (2, 3): 2,
+                (4, 2): 3,
+                (0, 0): 4,
+                (3, 0): 1  # special case
+            }
+            return mapping[x]
+
+        # expected_band_groups = [
+        #     {
+        #         0: [0, 1],
+        #         2: [2],
+        #         4: [3]
+        #     },
+        #     {
+        #         1: [0, 1, 3],
+        #         3: [2]
+        #     }
+        # ]
+
+        lsh = self.test_class(n_bands=2, hash_f=hash_f)
+        top_similar_index = lsh.get_top_similar_index(signatures)
+        expected_top_similar_index = {
+            0: [1, 3],
+            1: [0, 3],
+            3: [0, 1],
+        }
+        assert_equal(top_similar_index, expected_top_similar_index)
