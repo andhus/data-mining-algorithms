@@ -94,6 +94,24 @@ class MinHashing(object):
                         signatures[i, c] = min(hfs[i], signatures[i, c])
                     cols_parse_idx[c] += 1
 
+        # Alternative implementation only computing hashes for rows which
+        # exists in one of the docs.
+        #
+        # row = min([col[0] for col in sorted_columns])
+        # row_next = self.n_rows
+        # while row < self.n_rows:
+        #     hfs = [hash_f(row) for hash_f in self.hash_fs]
+        #     for c, col in enumerate(sorted_columns):
+        #         if cols_parse_idx[c] < len(col):
+        #             col_row = col[cols_parse_idx[c]]
+        #             if col_row == row:
+        #                 for i in range(self.n_hash_fs):
+        #                     signatures[i, c] = min(hfs[i], signatures[i, c])
+        #                 cols_parse_idx[c] += 1
+        #             row_next = min(col_row, row_next)
+        #     row = row_next
+        #     row_next = self.n_rows
+
         return [list(signatures[:, c]) for c in range(n_columns)]
 
 
@@ -157,6 +175,10 @@ class LocalitySensitiveHashing(object):
 
 
 LSH = LocalitySensitiveHashing
+
+
+def get_p_lsh_candidate(jsim, n_bands, n_rows_per_band):
+    return 1 - (1 - jsim ** n_rows_per_band) ** n_bands
 
 
 def get_jsim_and_approx_jsim(top_similar_index, hash_sets, signatures):

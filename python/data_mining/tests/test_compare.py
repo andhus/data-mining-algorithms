@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 
 from nose.tools import assert_equal
+from numpy.testing import assert_almost_equal
 
 
 def test_get_shingles():
@@ -188,3 +189,13 @@ class TestLocalitySensitiveHashing(object):
             3: [0, 1],
         }
         assert_equal(top_similar_index, expected_top_similar_index)
+
+
+def test_get_p_lsh_candidate():
+    from data_mining.compare import get_p_lsh_candidate
+    r = 5
+    b = 20
+    jsims = [.2, .3, .4, .5, .6]
+    ps = [get_p_lsh_candidate(jsim, n_bands=b, n_rows_per_band=r) for jsim in jsims]
+    expected_ps = [0.0063806, 0.0474943, 0.1860496, 0.4700507, 0.8019025]
+    assert_almost_equal(ps, expected_ps)
