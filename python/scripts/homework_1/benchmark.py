@@ -117,7 +117,8 @@ def plot_time_vs_ndocs(df):
     f, axs = plt.subplots(2, 1)
     df.plot.line(x="ndocs", y="t_minhash", marker="*", ax=axs[0])
     df.plot.line(x="ndocs", y="t_lsh", marker="*", ax=axs[1])
-
+    axs[0].set_ylabel("time [s]")
+    axs[1].set_ylabel("time [s]")
     return f, axs
 
 
@@ -145,7 +146,7 @@ def run_vary_ndocs():
 def plot_time_vs_nrows(df, ndocs):
     f, ax = plt.subplots(1, 1)
     df[df.ndocs == ndocs].plot.line(x="nrows", y="t_minhash", marker="*", ax=ax)
-
+    ax.set_ylabel("time [s]")
     return f, ax
 
 
@@ -312,14 +313,29 @@ def measure_lsh_recall(
 
 
 def run_recall_vs_threshold():
+    jsims = np.arange(0, 1, 0.005)
+    p_candidate_curve = np.array([
+        get_p_lsh_candidate(jsim, n_bands=20, n_rows_per_band=5)
+        for jsim in jsims
+    ])
+    f, ax = plt.subplots(1, 1)
+    ax.plot(jsims, p_candidate_curve)
+    ax.set_ylabel("p(LSH-candidate)")
+    ax.set_xlabel("Jaccard similarity")
+    f.set_size_inches(12, 6)
+    f.savefig(
+        os.path.join(OUTPUT_PATH, "p_candidates_curve.png"),
+        format="png"
+    )
     results = [measure_lsh_recall(jsim_threshold=th) for th in [0.3, 0.5, 0.7, 0.9]]
+
     return pd.DataFrame(results)
 
 
 if __name__ == '__main__':
     mkdirp(OUTPUT_PATH)
-    # res_vary_ndocs = run_vary_ndocs()
-    # res_vary_nrows = run_vary_nrows()
-    # res_vary_nbands_and_signature_size = run_vary_nbands_and_signature_size()
-    # res_accuracy_vs_nrows = run_accuracy_vs_nrows()
+    res_vary_ndocs = run_vary_ndocs()
+    res_vary_nrows = run_vary_nrows()
+    res_vary_nbands_and_signature_size = run_vary_nbands_and_signature_size()
+    res_accuracy_vs_nrows = run_accuracy_vs_nrows()
     res_recall_vs_threshold = run_recall_vs_threshold()
