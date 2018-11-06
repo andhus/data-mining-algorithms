@@ -33,6 +33,8 @@ def run_timing_job(
     minhash_size,
     lsh_nbands
 ):
+    """Times the execution of computing Min Hashes and running LSH.
+    """
     job_name = 'ndocs={}_nrows={}_minhash_size={}_lsh_nbands={}'.format(
         n_docs,
         n_rows,
@@ -189,6 +191,12 @@ def run_vary_nbands_and_signature_size():
 
 
 def get_jsim_matrix(n_docs, n_rows=None):
+    """Computes the full Jaccard similarity matrix for documents.
+
+    If n_rows=None (default) the _true_ shingle set similarities will be used (no
+    approximation) otherwise they will first be hashed to an hash space of size
+    `n_rows`.
+    """
     output_path = os.path.join(
         OUTPUT_PATH,
         "jsim_matrix_ndocs={}_nrows={}.npy".format(
@@ -258,6 +266,8 @@ def measure_lsh_recall(
     lsh_nbands=20,
     jsim_threshold=0.7
 ):
+    """Computes the recall of the LSH algorithm by comparing to "brute force"
+    calculation"""
     job_name = 'ndocs={}_nrows={}_minhash_size={}_lsh_nbands={}'.format(
         n_docs,
         n_rows,

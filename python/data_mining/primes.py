@@ -1,23 +1,22 @@
 from __future__ import print_function, division
 
 
-def up_to(n):
-    """Returns prime numbers <= n.
+def up_to(v):
+    """Returns prime numbers <= v.
+
+    Args:
+        v (int): the highest prime to return
+
+    Returns:
+        ([int]): List of prime numbers.
 
     Source: Based on:
         http://code.activestate.com/recipes/578923-first-n-primes-numbers/
-
-    Args:
-        n: the highest prime to return
-
-    Returns:
-
-
     """
-    prime_candidates = range(0, n + 1)
-    kmax = int(n ** 0.5) + 1
+    prime_candidates = range(0, v + 1)
+    kmax = int(v ** 0.5) + 1
     for k in range(2, kmax):
-        non_primes = range(k, n + 1, k)
+        non_primes = range(k, v + 1, k)
         del non_primes[0]
         for i in non_primes:
             prime_candidates[i] = 0
@@ -26,16 +25,16 @@ def up_to(n):
 
 
 def first(n):
-    """Returns first n prime numbers
+    """Returns first n prime numbers.
+
+    Args:
+        n (int): the number of prime numbers ot return.
+
+    Returns:
+        ([int]): List of prime numbers.
 
     Source: Based on:
         https://www.daniweb.com/programming/software-development/threads/233730/to-find-first-n-prime-numbers
-
-    Args:
-        n:
-
-    Returns:
-
     """
     if n > 10000:
         raise ValueError("n must be smaller than 10,000")

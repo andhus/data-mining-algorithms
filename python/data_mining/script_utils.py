@@ -6,7 +6,7 @@ import os
 from time import time
 
 
-DEFAULT_RESULTS_PATH = os.path.abspath(
+DEFAULT_RESULTS_PATH = os.path.abspath(  # script outputs end up here.
     os.path.join(*([__file__] + [os.pardir] * 3 + ['results']))
 )
 
@@ -18,6 +18,7 @@ def get_lsh_argument_parser(
     minhash_size=100,
     lsh_nbands=20,
 ):
+    """Helper method for argument parsing for MinHash -> LSH script."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--ndocs",
@@ -52,7 +53,7 @@ def get_lsh_argument_parser(
 
 
 class _TimedContext(object):
-
+    """Helper for timing code execution"""
     def __init__(self, time_f=time):
         self.time_f = time_f
 
@@ -69,10 +70,18 @@ class _TimedContext(object):
 
 
 def timer():
+    """Creates a timing context.
+
+    Usage:
+        with timer() as something_timer:
+            <run somethings>
+        print(something_timer.elapsed)
+    """
     return _TimedContext()
 
 
 def mkdirp(path):
+    """Recursively creates directories to the specified path"""
     if os.path.exists(path):
         if not os.path.isdir(path):
             raise IOError("{} exists and is not a directory".format(path))
