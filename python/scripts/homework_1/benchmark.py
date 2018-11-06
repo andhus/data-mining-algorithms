@@ -300,7 +300,7 @@ def measure_lsh_recall(
         if len(similar_docs) > 0:
             true_similar_index[i] = similar_docs
 
-    recall = tps / (tps + fns)
+    recall = tps / (tps + fns) if (tps + fns) > 0 else np.nan
     p_candidate_at_threshold = get_p_lsh_candidate(
         jsim=jsim_threshold,
         n_bands=lsh_nbands,

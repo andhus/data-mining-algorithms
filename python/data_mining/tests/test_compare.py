@@ -190,6 +190,35 @@ class TestLocalitySensitiveHashing(object):
         }
         assert_equal(top_similar_index, expected_top_similar_index)
 
+    def test_get_p_candidate(self):
+        p = self.test_class.get_p_candidate(jsim=0.4, n_bands=2, signature_size=2)
+        p_expected = 1. - (1. - 0.4) ** 2
+        assert_equal(p, p_expected)
+
+        p = self.test_class.get_p_candidate(jsim=0.7, n_bands=2, signature_size=3)
+        p_expected = 1. - (1. - (0.7 ** 2)) * (1. - 0.7)
+        assert_equal(p, p_expected)
+
+        p = self.test_class.get_p_candidate(jsim=0.3, n_bands=4, signature_size=8)
+        p_expected = 1. - (1. - (0.3 ** 2)) ** 4
+        assert_equal(p, p_expected)
+
+    def test_get(self):
+        jsim = 0.3
+        n_bands_expeced = 5
+        signature_size = 8
+        p = self.test_class.get_p_candidate(
+            jsim=jsim,
+            n_bands=n_bands_expeced,
+            signature_size=signature_size
+        )
+        n_bands = self.test_class.get_n_bands(
+            jsim=jsim,
+            signature_size=signature_size,
+            max_p_missed=1 - p + 1e-10
+        )
+        assert_equal(n_bands, n_bands_expeced)
+
 
 def test_get_p_lsh_candidate():
     from data_mining.compare import get_p_lsh_candidate

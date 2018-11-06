@@ -172,9 +172,9 @@ class LocalitySensitiveHashing(object):
         [1] Mining of Massive Datasets, J. Leskovec et al., p. 87
 
     """
-    def __init__(self, n_bands, hash_f=hash):
+    def __init__(self, n_bands, hash_f=None):
         self.n_bands = n_bands
-        self.hash_f = hash_f
+        self.hash_f = hash_f or hash
 
     def get_band_groups(self, signatures):
         """Splits signatures into bands and groups them within each band based on
@@ -241,8 +241,87 @@ class LocalitySensitiveHashing(object):
         band_groups = self.get_band_groups(signatures)
         return self.get_top_similar_index_from_band_groups(band_groups)
 
+    @staticmethod
+    def get_p_candidate(jsim, n_bands, signature_size):
+        """Computes probability that two signatures will be detected as similar
+        using the this LSH algorithm.
+
+        NOTE compared to `get_p_lsh_candidate` function below this version computes
+        the probability even when n_bans does not evenly divide signature size.
+
+        Args:
+            jsim: Actuall/Assumed Jaccard Similarity between the hypothetical
+                signatures
+            n_bands: Number of bands
+            signature_size: size of minhash signatures
+
+        Returns:
+            (float) Probability that the hypothetical signatures will be detected as
+                similar.
+        """
+        band_sizes = [  # divide to as even chunks as possible
+            len(a) for a in np.array_split(range(signature_size), n_bands)
+        ]
+        p_missed = 1.
+        for band_size in band_sizes:
+            p_missed *= (1 - jsim ** band_size)
+
+        return 1. - p_missed
+
+    @classmethod
+    def get_n_bands(cls, jsim, signature_size, max_p_missed):
+        """Computes the number of bands to choose for a given signature size and
+        required maximum probability to miss a similar pair.
+
+        Args:
+            jsim: Jaccard similarity
+            signature_size: Size of minhash signatures
+            max_p_missed: The highest accepted probability that a similar pair is
+                missed.
+
+        Returns:
+            The minimum number of bands to choose to achieve max_p_missed.
+        """
+        for n_bands in range(1, signature_size + 1):
+            p = cls.get_p_candidate(jsim, n_bands, signature_size)
+            if p > (1. - max_p_missed):
+                break
+        if not p > (1. - max_p_missed):
+            raise ValueError(
+                'No number of bands gives maximum missed probability of {} '
+                'for signature size {} and Jaccard similarity {}'.format(
+                    max_p_missed,
+                    signature_size,
+                    jsim
+                )
+            )
+
+        return n_bands
+
 
 LSH = LocalitySensitiveHashing
+
+
+def get_lsh_top_similar_index(signatures, jsim, max_p_missed=1e-5, lsh_hash_f=None):
+    """Helper function that selects the n_bands parameter and runs the LSH algorithm
+    based on maximum accepted probability of missing a similar pair.
+
+    Args:
+        signatures ([int]): Minhash signatures.
+        jsim: Jaccard similarity defining a "similar" pair
+        max_p_missed: The highest accepted probability that a similar pair is
+            missed.
+
+    Returns:
+        See output from `LocalitySensitiveHashing.get_top_similar_index`
+
+    """
+    signature_size = len(signatures[0])
+    n_bands = LSH.get_n_bands(jsim, signature_size, max_p_missed)
+    lsh = LSH(n_bands, hash_f=lsh_hash_f)
+    top_similar_index = lsh.get_top_similar_index(signatures)
+
+    return top_similar_index
 
 
 def get_p_lsh_candidate(jsim, n_bands, n_rows_per_band):

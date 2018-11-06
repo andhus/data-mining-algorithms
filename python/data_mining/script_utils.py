@@ -43,12 +43,13 @@ def get_lsh_argument_parser(
         default=minhash_size,
         help="TODO"
     )
-    parser.add_argument(
-        "--lsh-nbands",
-        type=int,
-        default=lsh_nbands,
-        help="TODO"
-    )
+    if lsh_nbands is not None:
+        parser.add_argument(
+            "--lsh-nbands",
+            type=int,
+            default=lsh_nbands,
+            help="TODO"
+        )
     return parser
 
 
