@@ -77,4 +77,4 @@ def mkdirp(path):
         if not os.path.isdir(path):
             raise IOError("{} exists and is not a directory".format(path))
     else:
-        os.mkdir(path)
+        os.makedirs(path)

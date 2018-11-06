@@ -12,37 +12,52 @@ from data_mining import primes
 def get_shingles(text, k=9, pad="_"):
     """Extracts shingles of size k from text.
 
-    # Args
+    Args
         text (str): The document to extract shingles for.
         k (int): Shingle size.
 
-    # Returns:
-        shingles [int]: The extracted shingles.
+    Returns:
+        shingles ([int]): The extracted shingles.
     """
     if len(text) < k:
         text = text.ljust(k, pad)
     return [text[i:i + k] for i in range(len(text) - k + 1)]
 
 
-def get_hash_set(sequence, hash_f=hash):
-    """TODO
-
-    Args:
-        sequence:
-        hash_f:
-
-    Returns:
-
+def get_hash_set(iterable, hash_f=hash):
+    """Extracts the set of hashes of elements in iterable.
     """
-    return set([hash_f(e) for e in sequence])
+    return set([hash_f(e) for e in iterable])
 
 
 def get_jaccard_similarity(s, t):
+    """Computes the Jaccard Similarity of two sets"""
     return len(s.intersection(t)) / len(s.union(t))
 
 
 class MinHashing(object):
+    """Implements the Min-Hashing algorithm [1] for extracting min hash signatures
+    from sets.
 
+    Args
+        n_rows (int): Size of the hash space of hash sets to encode.
+        n_hash_fs (int): Number of hash functions to use to compute the signates,
+            i.e. the size of the min hash signatures. Specify _either_ this argument
+            or hash_fs bellow.
+        hash_fs ([f: int -> int]) the specific hash functions to use. Specify
+            _either_ this argument or n_hash_fs bellow.
+        seed (int): Seed used for randomization in initialisation of hash functions.
+
+
+    Example
+        >>> mh = MinHashing(n_rows=10, n_hash_fs=3)
+        >>> mh([{1,2,3,4,5,6}, {3,4,5,6,7,8}, {5, 9}])
+        [[4, 0, 4], [0, 0, 0], [2, 3, 2]]
+
+    References:
+        [1] Mining of Massive Datasets, J. Leskovec et al., p. 81
+
+    """
     def __init__(self, n_rows, n_hash_fs=None, hash_fs=None, seed=0):
         self.n_rows = n_rows
         if hash_fs is not None:
@@ -72,12 +87,14 @@ class MinHashing(object):
             ]
 
     def __call__(self, hash_sets):
-        """Computes the MinHash signatures for hash_sets.
+        """Computes the MinHash signatures the provided for hash sets.
 
         Args:
-            hash_sets:
+            hash_sets ([{int}]): Iterable of hash sets to transform to min hash
+                signatures.
 
         Returns:
+            ([[int]]) The minhash signatures.
 
         """
         hash_sets = list(hash_sets)  # loads all in memory
@@ -116,13 +133,14 @@ class MinHashing(object):
 
 
 def get_estimated_jaccard_similarity_from_signatures(s_sign, t_sign):
-    """
+    """Computes the estimated Jaccard Similarity based on min hash signatures.
 
     Args:
-        s_sign:
-        t_sign:
+        s_sign, t_sign ([int], [int]): The signatures to compare. They must be of
+            same length.
 
     Returns:
+        (float) The estimated Jaccard Similarity.
 
     """
     if not len(s_sign) == len(t_sign):
@@ -134,12 +152,43 @@ def get_estimated_jaccard_similarity_from_signatures(s_sign, t_sign):
 
 
 class LocalitySensitiveHashing(object):
+    """Implements the LSH algorithm [1] for fast approximate detection of similar
+    vectors (such as MinHash signatures).
 
+    Args:
+        n_bands (int): Number of bands to use, each vector is split up to this
+            number of sub vectors.
+        hash_f: The hash function to apply to each band
+
+    Example
+        >>> lsh = LocalitySensitiveHashing(3)
+        >>> lsh.get_top_similar_index([
+                [1,2,3,4,5,6],
+                [1,2,3,5,5,7],
+                [0,0,0,0,5,7]])
+        {0: [1], 1: [0, 2], 2: [1]}
+
+    References:
+        [1] Mining of Massive Datasets, J. Leskovec et al., p. 87
+
+    """
     def __init__(self, n_bands, hash_f=hash):
         self.n_bands = n_bands
         self.hash_f = hash_f
 
     def get_band_groups(self, signatures):
+        """Splits signatures into bands and groups them within each band based on
+        hash of band elements
+
+        Args:
+            signatures ([[int]]): Vectors/MinHash signatures to group.
+
+        Returns:
+            ([{<band hash>: <signature indices>}]), where:
+                <band hash> (int): Hash of the elements in band.
+                <signature indicies> ([int]): the indices of signatures that which
+                    band hashed to <band hash>.
+        """
         # (should assert all have same length?)
         n_rows = len(signatures[0])
         bands = [  # divide to as even chunks as possible
@@ -155,6 +204,16 @@ class LocalitySensitiveHashing(object):
 
     @staticmethod
     def get_top_similar_index_from_band_groups(band_groups):
+        """Constructs an index with the most similar signatures for each signature (
+        with at least one similar signature) based on band groups.
+
+        Args:
+            band_groups: See output of `get_band_groups`.
+
+        Returns:
+            ({<signature index>: [<similar signature index>, ...]})
+        """
+
         doc_idx_to_top_similar = defaultdict(lambda: set([]))
         for groups in band_groups:
             for group in groups.values():
@@ -170,6 +229,15 @@ class LocalitySensitiveHashing(object):
         }
 
     def get_top_similar_index(self, signatures):
+        """Constructs an index with the most similar signatures for each signature (
+        with at least one similar signature).
+
+        Args:
+            signatures ([[int]]): Vectors/MinHash signatures to group.
+
+        Returns:
+            ({<signature index>: [<similar signature index>, ...]})
+        """
         band_groups = self.get_band_groups(signatures)
         return self.get_top_similar_index_from_band_groups(band_groups)
 
@@ -178,10 +246,37 @@ LSH = LocalitySensitiveHashing
 
 
 def get_p_lsh_candidate(jsim, n_bands, n_rows_per_band):
+    """Computes probability that two signatures will be detected as similar using the
+    LSH algorithm.
+
+    Args:
+        jsim: Actuall/Assumed Jaccard Similarity between the hypothetical signatures
+        n_bands: Number of bands
+        n_rows_per_band: Number of rows per band
+
+    Returns:
+        (float) Probability that the hypothetical signatures will be detected as
+            similar.
+    """
     return 1 - (1 - jsim ** n_rows_per_band) ** n_bands
 
 
 def get_jsim_and_approx_jsim(top_similar_index, hash_sets, signatures):
+    """Adds Jaccard and approximate (based on signatures) Jaccard similarity to a
+    "top similar index"
+
+    Args:
+        top_similar_index ({<signature index>: [<similar signature index>, ...]}):
+            See output of LocalitySensitiveHashing.get_top_similar_index.
+        hash_sets ([{int}]): The original hash sets
+        signatures ([[int]]): Signatures computed by MinHash algorithm.
+
+    Returns:
+        ({<signature index>: ([
+            (<similar signature index>, {'jsim': float, 'jsim_approx': float),
+            ...
+        ]})
+    """
     return {
         doc_idx_a: [
             (doc_idx_b, {
@@ -199,7 +294,14 @@ def get_jsim_and_approx_jsim(top_similar_index, hash_sets, signatures):
 
 
 def get_approximation_diffs(similarities_index):
-    """TODO
+    """Computes the (flat) array of differences between Jaccard and estimated Jaccard
+    similarity based on output of `get_jsim_and_approx_jsim` above.
+
+    Args:
+        similarities_index: See output of `get_jsim_and_approx_jsim` above.
+
+    Returns:
+        np.array(shape=(<total number of similarities detected>, )])
     """
     flat_sims = sum(similarities_index.values(), [])
     true_jsim = np.array([s[1]['jsim'] for s in flat_sims])
