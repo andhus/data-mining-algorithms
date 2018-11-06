@@ -19,11 +19,11 @@ from data_mining.compare import (
     get_approximation_diffs,
     get_jaccard_similarity,
     get_p_lsh_candidate)
-from data_mining.script_utils import timer, mkdirp
+from data_mining.script_utils import timer, mkdirp, DEFAULT_RESULTS_PATH
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-OUTPUT_PATH = os.path.abspath(__file__)[:-3]
+OUTPUT_PATH = os.path.join(DEFAULT_RESULTS_PATH, 'homework_1', 'benchmark')
 SHINGLES_SIZE = 10
 
 

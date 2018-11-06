@@ -3,8 +3,12 @@ from __future__ import print_function, division
 import argparse
 import os
 
-from contextlib import contextmanager
 from time import time
+
+
+DEFAULT_RESULTS_PATH = os.path.abspath(
+    os.path.join(*([__file__] + [os.pardir] * 3 + ['results']))
+)
 
 
 def get_lsh_argument_parser(

@@ -106,9 +106,6 @@ venv.bak/
 # Pycharm
 .idea/
 
-# Datasets
-/datasets/NewsGroups/*
-
-# Script Outputs
-/python/scripts/homework_1/benchmark
-
+# Project specifics
+/datasets/*
+/results/*
