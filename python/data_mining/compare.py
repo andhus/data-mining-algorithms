@@ -9,7 +9,7 @@ from tqdm import tqdm
 from data_mining import primes
 
 
-def get_shingles(text, k=9, pad="_"):
+def get_shingles(text, k=9, pad='_'):
     """Extracts shingles of size k from text.
 
     Args
@@ -63,14 +63,14 @@ class MinHashing(object):
         if hash_fs is not None:
             if n_hash_fs is not None:
                 raise ValueError(
-                    "`n_hash_fs` should not be specified when `hash_fs` is passed"
+                    '`n_hash_fs` should not be specified when `hash_fs` is passed'
                 )
             self.n_hash_fs = len(hash_fs)
             self.hash_fs = hash_fs
 
         else:
             if n_hash_fs is None:
-                raise ValueError("`n_hash_fs` (or `hash_fs`) must be specified")
+                raise ValueError('`n_hash_fs` (or `hash_fs`) must be specified')
             self.n_hash_fs = n_hash_fs
 
             # TODO verify / select better default hashes
@@ -144,7 +144,7 @@ def get_estimated_jaccard_similarity_from_signatures(s_sign, t_sign):
 
     """
     if not len(s_sign) == len(t_sign):
-        raise ValueError("signatures for s and t must be of same length")
+        raise ValueError('signatures for s and t must be of same length')
     equal = np.array(s_sign) == np.array(t_sign)
     fraction_equal = equal.sum() / len(s_sign)
 

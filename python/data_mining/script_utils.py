@@ -21,34 +21,34 @@ def get_lsh_argument_parser(
     """Helper method for argument parsing for MinHash -> LSH script."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--ndocs",
+        '--ndocs',
         type=int,
         default=ndocs,
-        help="the number of documents (first n) to analyse")
+        help='the number of documents (first n) to analyse')
     parser.add_argument(
-        "--nrows",
+        '--nrows',
         type=int,
         default=nrows,
-        help="range of output of hashing of shingles"
+        help='range of output of hashing of shingles'
     )
     parser.add_argument(
-        "-k", "--shingles-size",
+        '-k', '--shingles-size',
         type=int,
         default=shingles_size,
-        help="TODO"
+        help='Size of the (character level) shingles to use'
     )
     parser.add_argument(
-        "--minhash-size",
+        '--minhash-size',
         type=int,
         default=minhash_size,
-        help="TODO"
+        help='size minhash signatures'
     )
     if lsh_nbands is not None:
         parser.add_argument(
-            "--lsh-nbands",
+            '--lsh-nbands',
             type=int,
             default=lsh_nbands,
-            help="TODO"
+            help='number of bands to use for LSH'
         )
     return parser
 
@@ -85,6 +85,6 @@ def mkdirp(path):
     """Recursively creates directories to the specified path"""
     if os.path.exists(path):
         if not os.path.isdir(path):
-            raise IOError("{} exists and is not a directory".format(path))
+            raise IOError('{} exists and is not a directory'.format(path))
     else:
         os.makedirs(path)

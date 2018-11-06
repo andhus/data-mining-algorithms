@@ -43,7 +43,7 @@ def run_timing_job(
     )
     job_path = os.path.join(OUTPUT_PATH, job_name)
     mkdirp(job_path)
-    result_path = os.path.join(job_path, "result.json")
+    result_path = os.path.join(job_path, 'result.json')
 
     if os.path.exists(result_path):
         with open(result_path) as f:
@@ -57,10 +57,10 @@ def run_timing_job(
         """
         return hash(s) % n_rows
 
-    print("loading documents")
+    print('loading documents')
     documents = list(get_news_groups_documents(first_n=n_docs))
 
-    print("extracting shingle hashes")
+    print('extracting shingle hashes')
     with timer() as prep_timer:
         shingle_sequences = [
             get_shingles(doc, k=SHINGLES_SIZE) for doc in documents
@@ -69,12 +69,12 @@ def run_timing_job(
             get_hash_set(ss, hash_f=primary_hash) for ss in shingle_sequences
         ]
 
-    print("computing minhash signatures")
+    print('computing minhash signatures')
     mh = MinHashing(n_rows=n_rows, n_hash_fs=minhash_size)
     with timer() as minhash_timer:
         signatures = mh(hash_sets)
 
-    print("finding similar documents using LSH")
+    print('finding similar documents using LSH')
     lsh = LocalitySensitiveHashing(n_bands=lsh_nbands)
     with timer() as lsh_timer:
         top_similar_index = lsh.get_top_similar_index(signatures)
@@ -85,7 +85,7 @@ def run_timing_job(
         signatures
     )
     pprint(top_similarities_index)
-    with open(os.path.join(job_path, "top_similarities_index.json"), 'w') as f:
+    with open(os.path.join(job_path, 'top_similarities_index.json'), 'w') as f:
         json.dump(top_similarities_index, f)
 
     diffs = get_approximation_diffs(top_similarities_index)
@@ -95,21 +95,21 @@ def run_timing_job(
     ax.hist(diffs, bins=np.arange(-0.3, 0.31, 0.025))
     ax.set_xlim(-0.3, 0.3)
     f.set_size_inches((8, 6))
-    f.savefig(os.path.join(job_path, "error_dist.png"), format="png")
+    f.savefig(os.path.join(job_path, 'error_dist.png'), format='png')
 
     result = {
-        "ndocs": n_docs,
-        "nrows": n_rows,
-        "minhash_size": minhash_size,
-        "lsh_nbands": lsh_nbands,
-        "diff_mean": diff_mean,
-        "diff_std": diff_std,
-        "n_matches": len(diffs),
-        "t_prep": prep_timer.elapsed,
-        "t_minhash": minhash_timer.elapsed,
-        "t_lsh": lsh_timer.elapsed
+        'ndocs': n_docs,
+        'nrows': n_rows,
+        'minhash_size': minhash_size,
+        'lsh_nbands': lsh_nbands,
+        'diff_mean': diff_mean,
+        'diff_std': diff_std,
+        'n_matches': len(diffs),
+        't_prep': prep_timer.elapsed,
+        't_minhash': minhash_timer.elapsed,
+        't_lsh': lsh_timer.elapsed
     }
-    with open(result_path, "w") as f:
+    with open(result_path, 'w') as f:
         json.dump(result, f)
 
     return result
@@ -117,10 +117,10 @@ def run_timing_job(
 
 def plot_time_vs_ndocs(df):
     f, axs = plt.subplots(2, 1)
-    df.plot.line(x="ndocs", y="t_minhash", marker="*", ax=axs[0])
-    df.plot.line(x="ndocs", y="t_lsh", marker="*", ax=axs[1])
-    axs[0].set_ylabel("time [s]")
-    axs[1].set_ylabel("time [s]")
+    df.plot.line(x='ndocs', y='t_minhash', marker='*', ax=axs[0])
+    df.plot.line(x='ndocs', y='t_lsh', marker='*', ax=axs[1])
+    axs[0].set_ylabel('time [s]')
+    axs[1].set_ylabel('time [s]')
     return f, axs
 
 
@@ -140,15 +140,15 @@ def run_vary_ndocs():
     df = pd.DataFrame(results)
     f, axs = plot_time_vs_ndocs(df)
     f.set_size_inches((12, 8))
-    f.savefig(os.path.join(OUTPUT_PATH, "time_vs_ndocs.png"), format='png')
+    f.savefig(os.path.join(OUTPUT_PATH, 'time_vs_ndocs.png'), format='png')
 
     return df
 
 
 def plot_time_vs_nrows(df, ndocs):
     f, ax = plt.subplots(1, 1)
-    df[df.ndocs == ndocs].plot.line(x="nrows", y="t_minhash", marker="*", ax=ax)
-    ax.set_ylabel("time [s]")
+    df[df.ndocs == ndocs].plot.line(x='nrows', y='t_minhash', marker='*', ax=ax)
+    ax.set_ylabel('time [s]')
     return f, ax
 
 
@@ -167,7 +167,7 @@ def run_vary_nrows():
     df = pd.DataFrame(results)
     f, axs = plot_time_vs_nrows(df, ndocs=n_docs_s[0])
     f.set_size_inches((12, 6))
-    f.savefig(os.path.join(OUTPUT_PATH, "time_vs_nrows.png"), format='png')
+    f.savefig(os.path.join(OUTPUT_PATH, 'time_vs_nrows.png'), format='png')
 
     return df
 
@@ -199,7 +199,7 @@ def get_jsim_matrix(n_docs, n_rows=None):
     """
     output_path = os.path.join(
         OUTPUT_PATH,
-        "jsim_matrix_ndocs={}_nrows={}.npy".format(
+        'jsim_matrix_ndocs={}_nrows={}.npy'.format(
             n_docs,
             n_rows
         )
@@ -242,16 +242,16 @@ def run_accuracy_vs_nrows(n_docs=512):
     bins = np.arange(0, 0.1, 0.001)
     for d, n_rows, ax in zip(diffs, n_rows_s, axs):
         ax.hist(d, bins=bins)
-        ax.set_ylabel("nrows={}".format(n_rows))
-    ax.set_xlabel("Jaccard similarity diff (approximation - true)")
+        ax.set_ylabel('nrows={}'.format(n_rows))
+    ax.set_xlabel('Jaccard similarity diff (approximation - true)')
     f.set_size_inches((12, 16))
-    f.savefig(os.path.join(OUTPUT_PATH, "accuracy_vs_nrows.png"), format="png")
+    f.savefig(os.path.join(OUTPUT_PATH, 'accuracy_vs_nrows.png'), format='png')
     df = pd.DataFrame(
         {
-            "diff_mean": [np.mean(d) for d in diffs],
-            "diffs_std": [np.std(d) for d in diffs],
-            "diffs_95th": [np.percentile(d, 95) for d in diffs],
-            "diffs_max": [np.max(d) for d in diffs],
+            'diff_mean': [np.mean(d) for d in diffs],
+            'diffs_std': [np.std(d) for d in diffs],
+            'diffs_95th': [np.percentile(d, 95) for d in diffs],
+            'diffs_max': [np.max(d) for d in diffs],
         },
         index=n_rows_s
     )
@@ -277,7 +277,7 @@ def measure_lsh_recall(
     job_path = os.path.join(OUTPUT_PATH, job_name)
     mkdirp(job_path)
 
-    top_sim_path = os.path.join(job_path, "top_similarities_index.json")
+    top_sim_path = os.path.join(job_path, 'top_similarities_index.json')
     if not os.path.exists(top_sim_path):
         run_timing_job(n_docs, n_rows, minhash_size, lsh_nbands)
     with open(top_sim_path) as f:
@@ -307,15 +307,15 @@ def measure_lsh_recall(
         n_rows_per_band=minhash_size / lsh_nbands
     )
     result = {
-        "ndocs": n_docs,
-        "nrows": n_rows,
-        "minhash_size": minhash_size,
-        "lsh_nbands": lsh_nbands,
-        "nrows_per_band": minhash_size / lsh_nbands,
-        "jsim_threshold": jsim_threshold,
-        "p_candidate_at_threshold": p_candidate_at_threshold,
-        "support": tps + fns,
-        "recall": recall,
+        'ndocs': n_docs,
+        'nrows': n_rows,
+        'minhash_size': minhash_size,
+        'lsh_nbands': lsh_nbands,
+        'nrows_per_band': minhash_size / lsh_nbands,
+        'jsim_threshold': jsim_threshold,
+        'p_candidate_at_threshold': p_candidate_at_threshold,
+        'support': tps + fns,
+        'recall': recall,
     }
     print(result)
 
@@ -330,12 +330,12 @@ def run_recall_vs_threshold():
     ])
     f, ax = plt.subplots(1, 1)
     ax.plot(jsims, p_candidate_curve)
-    ax.set_ylabel("p(LSH-candidate)")
-    ax.set_xlabel("Jaccard similarity")
+    ax.set_ylabel('p(LSH-candidate)')
+    ax.set_xlabel('Jaccard similarity')
     f.set_size_inches(12, 6)
     f.savefig(
-        os.path.join(OUTPUT_PATH, "p_candidates_curve.png"),
-        format="png"
+        os.path.join(OUTPUT_PATH, 'p_candidates_curve.png'),
+        format='png'
     )
     results = [measure_lsh_recall(jsim_threshold=th) for th in [0.3, 0.5, 0.7, 0.9]]
 

@@ -11,11 +11,11 @@ def test_get_shingles():
         shingles = test_function(text, k, **kwargs)
         assert_equal(shingles, expected)
 
-    text = "abcde"
+    text = 'abcde'
     test_cases = [
-        ("basic", text, 3, ["abc", "bcd", "cde"], {}),
-        ("len(text) = k", text, len(text), [text], {}),
-        ("len(text) < k", text, len(text) + 1, [text + "_"], {"pad": "_"}),
+        ('basic', text, 3, ['abc', 'bcd', 'cde'], {}),
+        ('len(text) = k', text, len(text), [text], {}),
+        ('len(text) < k', text, len(text) + 1, [text + '_'], {'pad': '_'}),
     ]
 
     for test_name, text, k, expected, kwargs in test_cases:
@@ -30,12 +30,12 @@ def test_get_ordered_hash_set():
         assert_equal(ordered_hash_set, expected)
     
     def hash_f(e):
-        mapping = dict(zip("abcd", range(4)))
+        mapping = dict(zip('abcd', range(4)))
         return mapping[e]
 
     test_cases = [
-        ("basic", ["a", "d", "b"], {0, 1, 3}, {"hash_f": hash_f}),
-        ("duplicates", ["a", "d", "b", "a"], {0, 1, 3}, {"hash_f": hash_f}),
+        ('basic', ['a', 'd', 'b'], {0, 1, 3}, {'hash_f': hash_f}),
+        ('duplicates', ['a', 'd', 'b', 'a'], {0, 1, 3}, {'hash_f': hash_f}),
     ]
 
     for test_name, sequence, expected, kwargs in test_cases:
