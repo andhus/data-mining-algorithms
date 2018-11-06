@@ -24,13 +24,13 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '-p', '--max-missed-probability',
-        type=int,
+        type=float,
         default=0.001,
         help="maximum accepted probability that a similar pair is missed by LSH"
     )
     parser.add_argument(
         '-s', '--jsim-threshold',
-        type=int,
+        type=float,
         default=0.50,
         help='The Jaccard similarity threshold (defining a "similar" document)'
     )
