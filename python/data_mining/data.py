@@ -8,6 +8,32 @@ DEFAULT_DATA_PATH = os.path.abspath(
 )
 
 
+class LinesIterator(object):
+
+    def __init__(self, filepath, limit=None, postprocess=None):
+        self.filepath = filepath
+        self.limit = limit
+        self.postprocess = postprocess or (lambda x: x)
+        self._len = limit
+
+    def __iter__(self):
+        with open(self.filepath) as f:
+            for i, line in enumerate(f):
+                if self.limit and i == self.limit:
+                    break
+                yield self.postprocess(line)
+            self._len = i + 1
+
+    def __len__(self):
+        if self._len is None:
+            with open(self.filepath) as f:
+                for i, _ in enumerate(f):
+                    pass
+            self._len = i + 1
+
+        return self._len
+
+
 def get_news_groups_documents(mini=False, first_n=None):
     """Load NewsGroups data.
 
@@ -36,3 +62,23 @@ def get_news_groups_documents(mini=False, first_n=None):
         with open(doc_path) as f:
             doc = f.read()
         yield doc
+
+
+def get_frequent_itemset(first_n=None):
+    subset = 'T10I4D100K'
+    filepath = os.path.join(
+        DEFAULT_DATA_PATH,
+        'FrequentItemsetMining',
+        subset + ".dat"
+    )
+    if not os.path.exists(filepath):
+        raise IOError(
+            "Could not find Frequent Itemset Mining dataset. Run: "
+            "`./data-mining-algorithms/scripts/download_frequent_itemset.sh` "
+            "to download the data."
+        )
+    return LinesIterator(
+        filepath,
+        limit=first_n,
+        postprocess=lambda line: tuple([int(v) for v in line.split()])
+    )
