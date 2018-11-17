@@ -4,7 +4,7 @@ import argparse
 from pprint import pprint
 
 from data_mining.data import get_frequent_itemset
-from data_mining.set_frequency import get_frequent_sets_counts
+from data_mining.frequency import get_frequent_sets_counts
 
 
 def get_argument_parser(

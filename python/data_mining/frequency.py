@@ -69,6 +69,55 @@ def get_one_larger_supersets(subsets):
 
     return supersets
 
+# TODO compare alternative approach to find supersets, something like...
+# def get_one_larger_supersets_2(subsets):
+#     if len(subsets) == 0:
+#         return []
+#     size = len(subsets[0])
+#     one_smaller_to_left_out = defaultdict(lambda: [])
+#     for subset in subsets:
+#         subsubsets = get_subsets(subset, size - 1)
+#         for subsubset in subsubsets:
+#             one_smaller_to_left_out[subsubset].append()
+# ...
+
 
 def get_subsets(item_set, size):
     return itertools.combinations(item_set, size)
+
+
+def get_subsets_with_complement(item_set, size):
+    return (
+        (subset, tuple(sorted(set(item_set) - set(subset))))
+        for subset in get_subsets(item_set, size)
+    )
+
+
+def get_rules(subsets_counts, min_confidence):
+    """
+    Args:
+        subsets_counts: [
+            {(int, ): int},
+            {(int, int): int},
+            {(int, int, int): int}
+            ...
+        ]
+        min_confidence: float \in [0, 1]
+
+    Returns: {(int, ...): [((int, ...), float), ...]}
+    """
+    rules = defaultdict(lambda: [])
+    for rule_set_size in range(2, len(subsets_counts) + 1):
+        for rule_set in subsets_counts[rule_set_size - 1]:
+            for sub_size in range(1, rule_set_size):
+                for subset, complement in get_subsets_with_complement(
+                    rule_set,
+                    sub_size
+                ):
+                    confidence = (
+                        subsets_counts[rule_set_size - 1][rule_set] /
+                        subsets_counts[sub_size - 1][subset]
+                    )
+                    if confidence > min_confidence:
+                        rules[subset].append((complement, confidence))
+    return rules
