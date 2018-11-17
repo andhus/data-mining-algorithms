@@ -9,42 +9,46 @@ import itertools
 
 def get_frequent_sets_counts(
     item_sets,
-    size,
+    max_size=None,
     min_support=0.01,
 ):
-    if size == 1:
-        counts = defaultdict(lambda: 0)
-        num_item_sets = 0
-        for item_set in tqdm(item_sets, 'Extracting candidates of size 1'):
-            num_item_sets += 1
-            for item in item_set:
-                counts[item] += 1
-        min_count = min_support * num_item_sets
-        if min_count <= 1:
-            warn('min_count = {} <= 1'.format(min_count))
-        counts = {
-            (item,): count for item, count in counts.iteritems()
-            if count >= min_count
-        }
-        return [counts], min_count
+    if not (max_size is None or max_size >= 1):
+        raise ValueError('size must be >= 1 or None')
 
-    subsets_counts, min_count = get_frequent_sets_counts(
-        item_sets,
-        size=size - 1,
-        min_support=min_support
-    )
+    # special handling of size one set
     counts = defaultdict(lambda: 0)
-    candidate_sets = set(get_one_larger_supersets(subsets_counts[-1].keys()))
-    desc = 'Extracting candidates of size {}'.format(size)
-    for item_set in tqdm(item_sets, desc):
-        for subset in get_subsets(item_set, size=size):
-            if subset in candidate_sets:
-                counts[subset] += 1
+    num_item_sets = 0
+    for item_set in tqdm(item_sets, 'Extracting candidates of size 1'):
+        num_item_sets += 1
+        for item in item_set:
+            counts[item] += 1
+    min_count = min_support * num_item_sets
+    if min_count <= 1:
+        warn('min_count = {} <= 1'.format(min_count))
     counts = {
-        set_: count for set_, count in counts.iteritems()
+        (item,): count for item, count in counts.iteritems()
         if count >= min_count
     }
-    subsets_counts.append(counts)
+    subsets_counts = [counts]
+
+    # sets with size >= 2 extracted based on previous sets
+    size = 2
+    while max_size is None or size <= max_size:
+        counts = defaultdict(lambda: 0)
+        candidate_sets = set(get_one_larger_supersets(subsets_counts[-1].keys()))
+        desc = 'Extracting candidates of size {}'.format(size)
+        for item_set in tqdm(item_sets, desc):
+            for subset in get_subsets(item_set, size=size):
+                if subset in candidate_sets:
+                    counts[subset] += 1
+        counts = {
+            set_: count for set_, count in counts.iteritems()
+            if count >= min_count
+        }
+        if not counts:
+            break  # no new larger sets were found
+        subsets_counts.append(counts)
+        size += 1
 
     return subsets_counts, min_count
 
@@ -120,4 +124,4 @@ def get_rules(subsets_counts, min_confidence):
                     )
                     if confidence > min_confidence:
                         rules[subset].append((complement, confidence))
-    return rules
+    return dict(rules)

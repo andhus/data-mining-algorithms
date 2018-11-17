@@ -94,11 +94,11 @@ def test_get_frequent_sets():
     from data_mining.frequency import get_frequent_sets_counts
 
     def verify(
-        item_sets, size, min_support,
+        item_sets, max_size, min_support,
         expected_frequent_sets, expected_min_count
     ):
         frequent_sets, min_count = get_frequent_sets_counts(
-            item_sets, size=size, min_support=min_support)
+            item_sets, max_size=max_size, min_support=min_support)
         assert_equal([dict(fs) for fs in frequent_sets], expected_frequent_sets)
         assert_equal(min_count, expected_min_count)
 
@@ -141,15 +141,24 @@ def test_get_frequent_sets():
             ],
             0.3 * 4
         ),
+        (
+            item_sets, None, 0.3,
+            [
+                {(1,): 4, (2,): 4, (3,): 2, (4,): 2},
+                {(1, 2): 4, (1, 3): 2, (1, 4): 2, (2, 3): 2, (2, 4): 2},
+                {(1, 2, 3): 2, (1, 2, 4): 2}
+            ],
+            0.3 * 4
+        ),
     ]
 
     for (
-        item_sets, size, min_support,
+        item_sets, max_size, min_support,
         expected_frequent_sets, expected_min_count
     ) in test_cases:
         yield (
             verify,
-            item_sets, size, min_support,
+            item_sets, max_size, min_support,
             expected_frequent_sets, expected_min_count
         )
 
