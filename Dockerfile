@@ -16,8 +16,6 @@ WORKDIR /home/data-mining-algorithms
 COPY scripts ./scripts
 RUN mkdir datasets
 
-RUN ./scripts/download_news_groups.sh -t ./datasets
-
 RUN pip install pip --upgrade
 COPY python/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
