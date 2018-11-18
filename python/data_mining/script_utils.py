@@ -53,6 +53,40 @@ def get_lsh_argument_parser(
     return parser
 
 
+def get_frequent_itemsets_argument_parser(
+    num_baskets_limit=None,
+    max_set_size=None,
+    min_support=0.005,
+    min_confidence=0.10
+):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--num-baskets-limit',
+        type=int,
+        default=num_baskets_limit,
+        help='the number of (first n) baskets to analyse, leave empty for all')
+    parser.add_argument(
+        '--max-set-size',
+        type=int,
+        default=max_set_size,
+        help='max size of frequent sets to identify, leave empty for all'
+    )
+    parser.add_argument(
+        '--min-support',
+        type=float,
+        default=min_support,
+        help='minimum support of sets and rules to identify'
+    )
+    parser.add_argument(
+        '--min-confidence',
+        type=float,
+        default=min_confidence,
+        help='minimum confidence for rules to identify'
+    )
+
+    return parser
+
+
 class _TimedContext(object):
     """Helper for timing code execution"""
     def __init__(self, time_f=time):
