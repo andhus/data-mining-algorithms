@@ -57,7 +57,8 @@ def get_frequent_itemsets_argument_parser(
     num_baskets_limit=None,
     max_set_size=None,
     min_support=0.005,
-    min_confidence=0.10
+    min_confidence=0.10,
+    print_limit=10
 ):
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -82,6 +83,12 @@ def get_frequent_itemsets_argument_parser(
         type=float,
         default=min_confidence,
         help='minimum confidence for rules to identify'
+    )
+    parser.add_argument(
+        '--print-limit',
+        type=float,
+        default=print_limit,
+        help='print maximum this number of items per printed data structure'
     )
 
     return parser
