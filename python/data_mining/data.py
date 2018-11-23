@@ -136,3 +136,33 @@ def get_frequent_itemset(first_n=None, auto_download=True):
         limit=first_n,
         postprocess=lambda line: tuple([int(v) for v in line.split()])
     )
+
+
+def get_facebook_links(first_n=None, auto_download=True):
+    """
+
+    Args:
+        first_n (int | None): If provided, limit the number of baskets to this
+            number.
+        auto_download (bool): If True and data can be found it is automatically
+            downloaded.
+
+    Returns:
+        (Iterator(tuple(int))): The basket sets.
+    """
+    filepath = os.path.join(
+        DEFAULT_DATA_PATH,
+        'FacebookLinks',
+        'facebook-links.txt'
+    )
+    _require_dataset(
+        name='FacebookLinks',
+        filepath=filepath,
+        script='download_facebook_links.sh',
+        auto_download=auto_download
+    )
+    return LinesIterator(
+        filepath,
+        limit=first_n,
+        postprocess=lambda line: tuple([int(v) for v in line.split()[:2]])
+    )
