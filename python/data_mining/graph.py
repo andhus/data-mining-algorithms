@@ -1,17 +1,32 @@
 from __future__ import print_function, division
 
+import math
+import random
 from collections import defaultdict
-from contextlib import contextmanager
+from itertools import combinations
 
 import numpy as np
 from data_mining.stream import ReservoirSampling
+from tqdm import tqdm
+
+
+def binomial(n, k):
+    if k == n:
+        return 1
+    if k == 1:
+        return n
+    if k > n:
+        return 0
+    return math.factorial(n) // (
+        math.factorial(k) * math.factorial(n - k)
+    )
 
 
 class UndirectedGraph(object):
 
     def __init__(self):
         self.node_neighbors = defaultdict(lambda: set())
-        self.edges = []
+        self.edges = set([])
 
     def put_edge(self, edge):
         u, v = edge
@@ -19,10 +34,15 @@ class UndirectedGraph(object):
             raise ValueError('edge {} already exists'.format(edge))
         self.node_neighbors[u].add(v)
         self.node_neighbors[v].add(u)
-        self.edges.append(edge)
+        self.edges.add(edge)
 
     def pop_edge(self, edge):
-        raise NotImplementedError('')
+        if edge not in self.edges:
+            raise ValueError('')
+        u, v = edge
+        self.node_neighbors[u].remove(v)
+        self.node_neighbors[v].remove(u)
+        self.edges.remove(edge)
 
     def put_node(self, node):
         if node in self.node_neighbors:
@@ -31,6 +51,10 @@ class UndirectedGraph(object):
 
     def pop_node(self, node):
         raise NotImplementedError('')
+
+    @property
+    def nodes(self):
+        return sorted(self.node_neighbors.keys())
 
     @property
     def num_edges(self):
@@ -55,6 +79,48 @@ class EdgeReservoir(UndirectedGraph):
     def __len__(self):
         return self.num_edges
 
+    def get_r(self, node=None):
+        """The number of unordered pairs of distinct triangles (including node)
+        sharing an edge
+
+             3
+           / | \
+          4--0--1
+             | /
+             2
+        """
+        if node is not None:
+            shared = 0
+            for neig in self.get_neighbors(node):
+                num_tri = 0
+                for neig_neig in self.get_neighbors(neig) - {neig}:
+                    if node in self.get_neighbors(neig_neig):
+                        num_tri += 1
+                if num_tri > 1:
+                    shared += binomial(num_tri, 2)
+
+            return shared
+
+        # iterate over all nodes
+        rs = []
+        for node in tqdm(self.nodes):
+            rs.append(self.get_r(node))
+        agg = sum(rs)
+        assert agg % 2 == 0  # note says 3 in paper!?
+        return agg // 2
+
+    def get_r_pairs(self, node):
+        pairs = set([])  # TODO no need for set?
+        for neig in self.get_neighbors(node):
+            tris = []
+            for neig_neig in self.get_neighbors(neig) - {neig}:
+                if node in self.get_neighbors(neig_neig):
+                    tris.append(tuple(sorted((neig, neig_neig))))
+            if len(tris) > 1:
+                pairs.update(combinations(tris, 2))
+
+        return pairs
+
 
 def with_probability(p):
     return np.random.random() < p
@@ -65,19 +131,22 @@ class TriestBase(ReservoirSampling):
     REMOVE = -1
     ADD = 1
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.tau = None
         self.tau_node = None
-        super(TriestBase, self).__init__()
+        if 'seed' in kwargs:
+            random.seed(kwargs['seed'])
+        super(TriestBase, self).__init__(**kwargs)
 
     def put(self, edge):
         self.t += 1
-        if self.t < self.size:
+        if self.t <= self.size:
             self.reservoir.put_edge(edge)
             self.update_counters(self.ADD, edge)
         elif with_probability(self.size / self.t):
-            removed_edge = self.reservoir.pop_replace_random_edge(edge)
-            self.update_counters(self.REMOVE, removed_edge)
+            remove_edge = random.sample(self.reservoir.edges, 1)[0]
+            self.reservoir.pop_edge(remove_edge)
+            self.update_counters(self.REMOVE, remove_edge)
             self.reservoir.put_edge(edge)
             self.update_counters(self.ADD, edge)
         else:
@@ -95,18 +164,43 @@ class TriestBase(ReservoirSampling):
             self.tau_node[u] += operation
 
     def reset(self):
-        super(ReservoirSampling, self).reset()
+        super(TriestBase, self).reset()
         self.reservoir = EdgeReservoir()
         self.tau = 0
         self.tau_node = defaultdict(lambda: 0)
 
     @property
-    def _xi(self):
+    def xi(self):
         t = self.t
         M = self.size
         return max(1, t * (t - 1) * (t - 2) / (M * (M - 1) * (M - 2)))
 
-    def get_expected_num_triangles(self, node=None):
+    def get_estimated_num_triangles(self, node=None):
         if node is not None:
-            return self._xi * self.tau_node[node]
-        return self._xi * self.tau
+            return self.xi * self.tau_node[node]
+        return self.xi * self.tau
+
+
+def get_variance(t, M, xi_t, num_triangles_t, r_t):
+    print('num triangles: {}'.format(num_triangles_t))
+    print('r_t: {}'.format(r_t))
+    f = xi_t - 1
+    print('f: {}'.format(f))
+    g = xi_t * (M - 3) * (M - 4) / (
+        (t - 3) * (t - 4)
+    ) - 1
+    print('g: {}'.format(g))
+    h = xi_t * (M - 3) * (M - 4) * (M - 5) / (
+        (t - 3) * (t - 4) * (t - 5)
+    ) - 1
+    print('h: {}'.format(h))
+    w = binomial(num_triangles_t, 2) - r_t
+    print('w: {}'.format(w))
+
+    var = (
+        num_triangles_t * f +
+        r_t * g +
+        w * h
+    )
+
+    return var

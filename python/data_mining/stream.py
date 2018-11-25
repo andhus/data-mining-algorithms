@@ -26,6 +26,7 @@ class ReservoirSampling(StreamProcessor):
         self.t = None
         self.reservoir = None
         self.seed = seed
+        np.random.seed(seed)
         self.reset()
 
     def put(self, item):
@@ -41,4 +42,3 @@ class ReservoirSampling(StreamProcessor):
     def reset(self):
         self.reservoir = []
         self.t = 0
-        np.random.seed(self.seed)

@@ -138,7 +138,7 @@ def get_frequent_itemset(first_n=None, auto_download=True):
     )
 
 
-def get_facebook_links(first_n=None, auto_download=True):
+def get_facebook_links(first_n=None, auto_download=True, unique=True):
     """
 
     Args:
@@ -150,19 +150,37 @@ def get_facebook_links(first_n=None, auto_download=True):
     Returns:
         (Iterator(tuple(int))): The basket sets.
     """
-    filepath = os.path.join(
+    org_filepath = os.path.join(
         DEFAULT_DATA_PATH,
         'FacebookLinks',
         'facebook-links.txt'
     )
     _require_dataset(
         name='FacebookLinks',
-        filepath=filepath,
+        filepath=org_filepath,
         script='download_facebook_links.sh',
         auto_download=auto_download
     )
+    unique_filepath = os.path.join(
+        DEFAULT_DATA_PATH,
+        'FacebookLinks',
+        'facebook-links-unique.txt'
+    )
+    post_process_f = lambda line: tuple(
+        sorted([int(v) for v in line.split()[:2]])
+    )
+    if unique and not os.path.exists(unique_filepath):
+        seen =set([])
+        with open(org_filepath) as f_org:
+            with open(unique_filepath, 'w') as f_unique:
+                for line in f_org:
+                    res = post_process_f(line)
+                    if res not in seen:
+                        seen.add(res)
+                        f_unique.write(line)
+
     return LinesIterator(
-        filepath,
+        org_filepath if not unique else unique_filepath,
         limit=first_n,
-        postprocess=lambda line: tuple([int(v) for v in line.split()[:2]])
+        postprocess=post_process_f
     )
