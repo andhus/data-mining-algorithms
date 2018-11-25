@@ -39,3 +39,14 @@ if __name__ == '__main__':
         num_triangles_t=ref_num,
         r_t=tb_reference.reservoir.get_r()
     )
+
+    print("true number of triangles: {}".format(ref_num))
+    print(
+        "estimated number of triangles (first run): {}".format(num_triangles_est[0])
+    )
+    print("standard deviation of estimation over 100 runs: {}".format(std))
+    print(
+        "theoretical standard deviation of estimation: {}".format(
+            np.sqrt(theoretical_variance)
+        )
+    )

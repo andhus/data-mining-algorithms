@@ -17,3 +17,6 @@ if __name__ == '__main__':
 
     true_number_triangles = tb_reference.get_estimated_num_triangles()
     est_number_triangles = tb.get_estimated_num_triangles()
+
+    print("true num triangles: {}".format(true_number_triangles))
+    print("estimated num triangles: {}".format(est_number_triangles))
