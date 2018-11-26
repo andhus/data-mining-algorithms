@@ -198,8 +198,8 @@ class TestEdgeReservoir(GraphTests):
         assert_equal(g.get_r(0), 9)
 
 
-class TestTriestBase():
-    from data_mining.graph import TriestBase as test_class
+class TriestTests():
+    test_class = None
 
     def test_exact_at_t_less_than_size(self):
         tb = self.test_class(size=10)
@@ -342,3 +342,11 @@ class TestTriestBase():
             rel_diff = (est_num - ref_num) / ref_num
             rel_diffs.append(rel_diff)
         assert_allclose(1 + np.mean(rel_diffs), 1., rtol=0.10)
+
+
+class TestTriestBase(TriestTests):
+    from data_mining.graph import TriestBase as test_class
+
+
+class TestTriestImpr(TriestTests):
+    from data_mining.graph import TriestImpr as test_class

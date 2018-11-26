@@ -89,7 +89,7 @@ class UndirectedGraph(object):
             self._node_neighbors[neigh].remove(node)
         del self._node_neighbors[node]
 
-    def get_neighbors(self, node):
+    def get_neighbors(self, node, **kwargs):
         """Gets the neighbours of the given node
 
         Args:
@@ -99,6 +99,8 @@ class UndirectedGraph(object):
             {int}
         """
         if node not in self._node_neighbors:
+            if 'default' in kwargs:
+                return kwargs['default']
             raise ValueError('node {} not in graph'.format(node))
         return self._node_neighbors[node]
 
@@ -332,3 +334,99 @@ class TriestBase(ReservoirSampling):
         )
 
         return var
+
+
+class TriestImpr(TriestBase):
+    """Implementation of the TRIEST IMPR algorith in [1].
+
+    References:
+        [1] L. De Stefani, A. Epasto, M. Riondato, and E. Upfal, TRIEST: Counting
+            Local and Global Triangles in Fully-Dynamic Streams with Fixed Memory
+            Size, KDD'16
+            https://www.kdd.org/kdd2016/papers/files/rfp0465-de-stefaniA.pdf
+
+    Args:
+        size (int): the size of the reservoir (M in [1]).
+        seed: seed for random number generation.
+    """
+    def put(self, edge):
+        """Process next item (graph edge) in the stream.
+
+        Args:
+            edge ((int, int)): an _added edge_ connecting nodes edge[0] and edge[1].
+
+        Combination of main loop and `SampleEdge` function in [1]: Algorithm 1.
+        """
+        self.t += 1
+        self.update_counters(self.ADD, edge)
+        if self.t <= self.size:
+            self.reservoir.put_edge(edge)
+        elif with_probability(self.size / self.t):
+            remove_edge = random.sample(self.reservoir.edges, 1)[0]
+            self.reservoir.pop_edge(remove_edge)
+            self.reservoir.put_edge(edge)
+        else:
+            pass
+
+    @staticmethod
+    def get_eta(t, reservoir_size):
+        M = reservoir_size
+        eta = max(1, (t - 1) * (t - 2) / (M * (M - 1)))
+        return eta
+
+    @property
+    def eta(self):
+        """The modification weight in UpdateCounter in TRIEST IMPR"""
+        return self.get_eta(self.t, self.size)
+
+    def update_counters(self, operation, edge):
+        """Modified `UpdateCounters` function in [1]: Algorithm 1. according
+        "4.2 Improved insertion algorithm"
+        """
+        v, u = edge
+        u_neigh = self.reservoir.get_neighbors(u, default=set([]))
+        v_neigh = self.reservoir.get_neighbors(v, default=set([]))
+        shared_neighborhood = set(u_neigh.intersection(v_neigh))
+        assert operation == self.ADD  # only add used in TriestImpr
+        update = operation * self.eta
+        for shared_neighbor in shared_neighborhood:
+            self.tau += update
+            self.tau_node[shared_neighbor] += update
+            self.tau_node[v] += update
+            self.tau_node[u] += update
+
+    @property
+    def xi(self):
+        raise NotImplementedError('not relevant for TriestImpr')
+
+    def get_estimated_num_triangles(self, node=None):
+        """Computes the estimated number of triangles.
+
+        "When queried for an estimation, triest-impr returns the value of the
+        corresponding counter, unmodified." [1] p.3
+
+        Args:
+            node (int | None): the estimated number of triangles in the sub-graph
+                containing this node is returned if specified, if None (default) for
+                the entire graph.
+
+        Returns:
+            (float) Estimated number of triangles.
+        """
+        if node is not None:
+            return self.tau_node[node]
+        return self.tau
+
+    @staticmethod
+    def get_variance_upper_bound(t, reservoir_size, num_triangles_t, r_t):
+        return (
+            num_triangles_t * (TriestImpr.get_eta(t, reservoir_size) - 1) +
+            r_t * (t - 1 - reservoir_size) / reservoir_size
+        )
+
+    @staticmethod
+    def get_variance(t, reservoir_size, xi_t, num_triangles_t, r_t):
+        raise NotImplementedError(
+            'The exact variance of TriestImpr cannot be computed, '
+            'see `get_variance_upper_bound` instead'
+        )
