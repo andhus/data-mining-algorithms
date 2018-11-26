@@ -61,77 +61,60 @@ if __name__ == '__main__':
 
     true_num_tri = tb_reference.get_estimated_num_triangles()
 
-    tb = TriestBase(size=args.reservoir_size, seed=args.seed)
-    ti = TriestImpr(size=args.reservoir_size, seed=args.seed)
-    tfd = TriestFD(size=args.reservoir_size, seed=args.seed)
-    num_triangles_est_tb = []
-    num_triangles_est_ti = []
-    num_triangles_est_tfd = []
+    base = TriestBase(size=args.reservoir_size, seed=args.seed)
+    impr = TriestImpr(size=args.reservoir_size, seed=args.seed)
+    fd = TriestFD(size=args.reservoir_size, seed=args.seed)
+    num_triangles_est_base = []
+    num_triangles_est_impr = []
+    num_triangles_est_fd = []
     for _ in tqdm(range(args.num_estimates), desc='Running repeated estimations'):
-        tb.reset()
-        tb(edges[:args.limit])
-        num_triangles_est_tb.append(tb.get_estimated_num_triangles())
+        base.reset()
+        base(edges[:args.limit])
+        num_triangles_est_base.append(base.get_estimated_num_triangles())
 
-        ti.reset()
-        ti(edges[:args.limit])
-        num_triangles_est_ti.append(ti.get_estimated_num_triangles())
+        impr.reset()
+        impr(edges[:args.limit])
+        num_triangles_est_impr.append(impr.get_estimated_num_triangles())
 
-        tfd.reset()
-        tfd([(TriestBase.ADD, edge) for edge in edges[:args.limit]])
-        num_triangles_est_tfd.append(tfd.get_estimated_num_triangles())
-
-    est_mean_tb = np.mean(num_triangles_est_tb)
-    est_std_tb = np.std(num_triangles_est_tb)
-
-    est_mean_ti = np.mean(num_triangles_est_ti)
-    est_std_ti = np.std(num_triangles_est_ti)
-
-    est_mean_tfd = np.mean(num_triangles_est_tfd)
-    est_std_tfd = np.std(num_triangles_est_tfd)
-
+        fd.reset()
+        fd([(TriestBase.ADD, edge) for edge in edges[:args.limit]])
+        num_triangles_est_fd.append(fd.get_estimated_num_triangles())
 
     print('Computing theoretical variance for TriesteBase the given dataset...')
-    theoretical_variance_tb = TriestBase.get_variance(
-        t=tb.t,
-        reservoir_size=tb.size,
-        xi_t=tb.xi,
+    theoretical_variance_base = TriestBase.get_variance(
+        t=base.t,
+        reservoir_size=base.size,
+        xi_t=base.xi,
         num_triangles_t=true_num_tri,
         r_t=tb_reference.reservoir.get_r()
     )
     print('Computing theoretical variance for TriesteBase the given dataset...')
-    theoretical_variance_ub_ti = TriestImpr.get_variance_upper_bound(
-        t=tb.t,
-        reservoir_size=tb.size,
+    theoretical_variance_ub_impr = TriestImpr.get_variance_upper_bound(
+        t=base.t,
+        reservoir_size=base.size,
         num_triangles_t=true_num_tri,
         r_t=tb_reference.reservoir.get_r()
     )
 
     print("True number of triangles: {}".format(true_num_tri))
 
-    print('\n---- TriestBase ----')
-    print("Typical estimated number of triangles (first run): {}".format(
-        num_triangles_est_tb[0]))
-    print("Mean of estimates: {}, off by {}%".format(
-        est_mean_tb, round(est_mean_tb / true_num_tri - 1, 3) * 100))
-    print("Standard deviation of estimation over {} runs: {}".format(
-        args.num_estimates,  est_std_tb))
+    def print_results(name, num_triangles_est):
+        est_mean = np.mean(num_triangles_est)
+        est_std = np.std(num_triangles_est)
+        print('\n---- {} ----'.format(name))
+        print("Typical estimated number of triangles (first 3 runs): {}".format(
+            num_triangles_est[:3]))
+        print("Mean of estimates: {}, off by {}%".format(
+            est_mean, round(est_mean / true_num_tri - 1, 3) * 100))
+        print("Standard deviation of estimation over {} runs: {}".format(
+            args.num_estimates,  est_std))
+
+    print_results('TriestBase', num_triangles_est_base)
     print("theoretical standard deviation of estimation: {}".format(
-        np.sqrt(theoretical_variance_tb)))
+        np.sqrt(theoretical_variance_base)))
 
-    print('\n---- TriestImpr ----')
-    print("Typical estimated number of triangles (first run): {}".format(
-        num_triangles_est_ti[0]))
-    print("Mean of estimates: {}, off by {}%".format(
-        est_mean_tb, round(est_mean_ti / true_num_tri - 1, 3) * 100))
-    print("Standard deviation of estimation over {} runs: {}".format(
-        args.num_estimates, est_std_ti))
+    print_results('TriestImpr', num_triangles_est_impr)
     print("theoretical UPPER BOUND of standard deviation of estimation: {}".format(
-        np.sqrt(theoretical_variance_ub_ti)))
+        np.sqrt(theoretical_variance_ub_impr)))
 
-    print('\n---- TriestFD ----')
-    print("Typical estimated number of triangles (first run): {}".format(
-        num_triangles_est_tfd[0]))
-    print("Mean of estimates: {}, off by {}%".format(
-        est_mean_tb, round(est_mean_tfd / true_num_tri - 1, 3) * 100))
-    print("Standard deviation of estimation over {} runs: {}".format(
-        args.num_estimates, est_std_tfd))
+    print_results('TriestFD', num_triangles_est_fd)
