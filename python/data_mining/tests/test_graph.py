@@ -1,10 +1,17 @@
 from __future__ import print_function, division
 
 import random
+
 from itertools import combinations
 
 import numpy as np
-from nose.tools import assert_equal, assert_raises, assert_less
+
+from nose.tools import (
+    assert_equal,
+    assert_raises,
+    assert_less,
+    assert_raises
+)
 from numpy.testing import assert_allclose
 
 
@@ -72,6 +79,27 @@ class GraphTests(object):
         assert_equal(g.get_neighbors(1), {0})
         assert_equal(g.get_neighbors(2), set([]))
 
+    def test_pop_edge_remove_disconnected_nodes(self):
+        g = self.test_class()
+        g.put_edge((0, 1))
+        g.put_edge((0, 2))
+        g.put_edge((1, 2))
+        assert_equal(g.get_neighbors(0), {1, 2})
+        assert_equal(g.get_neighbors(1), {0, 2})
+        assert_equal(g.get_neighbors(2), {0, 1})
+
+        g.pop_edge((1, 2), remove_disconnected_nodes=True)
+        assert_equal(g.get_neighbors(0), {1, 2})
+        assert_equal(g.get_neighbors(1), {0})
+        assert_equal(g.get_neighbors(2), {0})
+
+        g.pop_edge((0, 2), remove_disconnected_nodes=True)
+        assert_equal(g.get_neighbors(0), {1})
+        assert_equal(g.get_neighbors(1), {0})
+        assert 2 not in g
+        with assert_raises(ValueError):
+            g.get_neighbors(2)
+
     def test_put_pop_node(self):
         g = self.test_class()
         g.put_edge((0, 1))
@@ -96,8 +124,9 @@ class GraphTests(object):
 
         g.pop_node(2)
         assert_equal(g.get_neighbors(0), {1, 4})
-        assert_equal(g.get_neighbors(2), set([]))
         assert 2 not in g
+        with assert_raises(ValueError):
+            g.get_neighbors(2)
 
 
 class TestUndirectedGraph(GraphTests):

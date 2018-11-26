@@ -48,7 +48,7 @@ class UndirectedGraph(object):
         self._node_neighbors[v].add(u)
         self.edges.add(edge)
 
-    def pop_edge(self, edge):
+    def pop_edge(self, edge, remove_disconnected_nodes=False):
         """Removes the edge from the graph.
 
         Args:
@@ -61,6 +61,11 @@ class UndirectedGraph(object):
         self._node_neighbors[u].remove(v)
         self._node_neighbors[v].remove(u)
         self.edges.remove(edge)
+        if remove_disconnected_nodes:
+            if len(self._node_neighbors[u]) == 0:
+                del self._node_neighbors[u]
+            if len(self._node_neighbors[v]) == 0:
+                del self._node_neighbors[v]
 
     def put_node(self, node):
         """Adds a node to the graph.
@@ -93,7 +98,9 @@ class UndirectedGraph(object):
         Returns
             {int}
         """
-        return self._node_neighbors.get(node, set([]))
+        if node not in self._node_neighbors:
+            raise ValueError('node {} not in graph'.format(node))
+        return self._node_neighbors[node]
 
     def __contains__(self, item):
         if isinstance(item, int):

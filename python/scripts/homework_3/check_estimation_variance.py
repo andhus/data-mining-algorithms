@@ -34,8 +34,9 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     print("Verifying estimation variance for: {}".format(args))
-    num_nodes = int(np.sqrt(args.limit) * 2)
-    nodes = range(num_nodes)
+
+    # generate data
+    nodes = range(args.num_nodes)
     edges = list(combinations(nodes, 2))
     if args.limit is not None and len(edges) < args.limit:
         raise ValueError('binomial(num_nodes, 2) must be > limit')
@@ -43,6 +44,7 @@ if __name__ == '__main__':
     print('Sampling {} edges (the given limit) out of {} possible for the fully '
           'connected graph'.format(args.limit, len(edges)))
 
+    # create reference reservoir that has capacity for the full graph
     tb_reference = TriestBase(size=len(edges))  # seed does not matter
     tb_reference(edges[:args.limit])
 
