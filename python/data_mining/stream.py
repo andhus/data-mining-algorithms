@@ -5,22 +5,30 @@ import numpy as np
 
 
 class StreamProcessor(object):
+    """Base class for stream processors"""
 
     def __call__(self, items):
+        """Processed the whole stream of items.
+
+        Args:
+            items (Iterable(object)) the stream of items to process.
+        """
         for item in items:
             self.put(item)
 
     @abc.abstractmethod
     def put(self, item):
+        """The method for processing one item"""
         raise NotImplementedError('')
 
     @abc.abstractmethod
     def reset(self):
+        """Resets the stream processor"""
         raise NotImplementedError('')
 
 
 class ReservoirSampling(StreamProcessor):
-    """Maintains a uniform sample of processed items up to any time t."""
+    """Maintains a UNIFORM SAMPLE of processed items up to any time t."""
     def __init__(self, size, seed=None):
         self.size = size
         self.t = None

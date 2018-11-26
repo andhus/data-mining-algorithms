@@ -7,7 +7,6 @@ from tqdm import tqdm
 import numpy as np
 
 from data_mining.graph import TriestBase
-from data_mining.graph import get_variance
 
 
 if __name__ == '__main__':
@@ -32,9 +31,9 @@ if __name__ == '__main__':
     mean = np.mean(num_triangles_est)
     std = np.std(num_triangles_est)
 
-    theoretical_variance = get_variance(
+    theoretical_variance = TriestBase.get_variance(
         t=tb.t,
-        M=tb.size,
+        reservoir_size=tb.size,
         xi_t=tb.xi,
         num_triangles_t=ref_num,
         r_t=tb_reference.reservoir.get_r()

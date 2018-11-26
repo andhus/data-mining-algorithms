@@ -18,6 +18,10 @@ class GraphTests(object):
         assert_equal(g.get_neighbors(1), {0})
         assert_equal(g.edges, {(0, 1)})
         assert_equal(g.num_edges, 1)
+        assert_equal(g.num_nodes, 2)
+        assert (0, 1) in g
+        assert 0 in g
+        assert 1 in g
 
         g.put_edge((0, 2))
         assert_equal(g.get_neighbors(0), {1, 2})
@@ -25,6 +29,7 @@ class GraphTests(object):
         assert_equal(g.get_neighbors(1), {0})
         assert_equal(g.edges, {(0, 1), (0, 2)})
         assert_equal(g.num_edges, 2)
+        assert_equal(g.num_nodes, 3)
 
         g.put_edge((2, 1))
         assert_equal(g.get_neighbors(0), {1, 2})
@@ -32,6 +37,7 @@ class GraphTests(object):
         assert_equal(g.get_neighbors(1), {0, 2})
         assert_equal(g.edges, {(0, 1), (0, 2), (2, 1)})
         assert_equal(g.num_edges, 3)
+        assert_equal(g.num_nodes, 3)
 
     def test_put_existing_edge(self):
         g = self.test_class()
@@ -47,6 +53,52 @@ class GraphTests(object):
         assert_equal(g.get_neighbors(0), {1})
         assert_equal(g.get_neighbors(1), {0})
 
+    def test_pop_edge(self):
+        g = self.test_class()
+        g.put_edge((0, 1))
+        g.put_edge((0, 2))
+        g.put_edge((1, 2))
+        assert_equal(g.get_neighbors(0), {1, 2})
+        assert_equal(g.get_neighbors(1), {0, 2})
+        assert_equal(g.get_neighbors(2), {0, 1})
+
+        g.pop_edge((1, 2))
+        assert_equal(g.get_neighbors(0), {1, 2})
+        assert_equal(g.get_neighbors(1), {0})
+        assert_equal(g.get_neighbors(2), {0})
+
+        g.pop_edge((0, 2))
+        assert_equal(g.get_neighbors(0), {1})
+        assert_equal(g.get_neighbors(1), {0})
+        assert_equal(g.get_neighbors(2), set([]))
+
+    def test_put_pop_node(self):
+        g = self.test_class()
+        g.put_edge((0, 1))
+        g.put_edge((0, 2))
+        g.put_edge((1, 2))
+        assert_equal(g.get_neighbors(0), {1, 2})
+        assert_equal(g.get_neighbors(1), {0, 2})
+        assert_equal(g.get_neighbors(2), {0, 1})
+        assert_equal(g.num_nodes, 3)
+
+        g.put_node(4)
+        assert_equal(g.get_neighbors(0), {1, 2})
+        assert_equal(g.get_neighbors(1), {0, 2})
+        assert_equal(g.get_neighbors(2), {0, 1})
+        assert_equal(g.get_neighbors(4), set([]))
+        assert_equal(g.num_nodes, 4)
+
+        g.put_edge((0, 4))
+        assert_equal(g.get_neighbors(0), {1, 2, 4})
+        assert_equal(g.get_neighbors(4), {0})
+        assert_equal(g.num_nodes, 4)
+
+        g.pop_node(2)
+        assert_equal(g.get_neighbors(0), {1, 4})
+        assert_equal(g.get_neighbors(2), set([]))
+        assert 2 not in g
+
 
 class TestUndirectedGraph(GraphTests):
     from data_mining.graph import UndirectedGraph as test_class
@@ -54,15 +106,6 @@ class TestUndirectedGraph(GraphTests):
 
 class TestEdgeReservoir(GraphTests):
     from data_mining.graph import EdgeReservoir as test_class
-
-    # def test_pop_replace_random_edge(self):
-    #     g = self.test_class()
-    #     initial_edges = [(0, 1), (0, 2), (1, 2)]
-    #     for edge in initial_edges:
-    #         g.put_edge(edge)
-    #     edge = g.pop_replace_random_edge((0, 3))
-    #     assert edge in initial_edges
-    #     assert_equal(set(g.edges).union({edge}), set(initial_edges).union({(0, 3)}))
 
     def test_get_r(self):
         g = self.test_class()
