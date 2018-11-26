@@ -225,7 +225,7 @@ def with_probability(p):
 
 
 class TriestBase(ReservoirSampling):
-    """Implementation of the TRIEST BASE algorith in [1].
+    """Implementation of the TRIEST-BASE algorith in [1].
 
     References:
         [1] L. De Stefani, A. Epasto, M. Riondato, and E. Upfal, TRIEST: Counting
@@ -337,7 +337,7 @@ class TriestBase(ReservoirSampling):
 
 
 class TriestImpr(TriestBase):
-    """Implementation of the TRIEST IMPR algorith in [1].
+    """Implementation of the TRIEST-IMPR algorith in [1].
 
     References:
         [1] L. De Stefani, A. Epasto, M. Riondato, and E. Upfal, TRIEST: Counting
@@ -430,3 +430,93 @@ class TriestImpr(TriestBase):
             'The exact variance of TriestImpr cannot be computed, '
             'see `get_variance_upper_bound` instead'
         )
+
+
+class TriestFD(TriestBase):
+    """Implementation of the TRIEST-FD algorith in [1].
+
+    References:
+        [1] L. De Stefani, A. Epasto, M. Riondato, and E. Upfal, TRIEST: Counting
+            Local and Global Triangles in Fully-Dynamic Streams with Fixed Memory
+            Size, KDD'16
+            https://www.kdd.org/kdd2016/papers/files/rfp0465-de-stefaniA.pdf
+
+    Args:
+        size (int): the size of the reservoir (M in [1]).
+        seed: seed for random number generation.
+    """
+
+    def put(self, (operation, edge)):
+        """Process next item (graph edge) in the stream.
+
+        Args:
+            operation (int): Integer in {1, -1} for ADD, REMOVE respectively.
+            edge ((int, int)): an _added edge_ connecting nodes edge[0] and edge[1].
+
+        Combination of main loop and `SampleEdge` function in [1]: Algorithm 1.
+        """
+        self.t += 1
+        self.s += operation
+        if operation == self.ADD:
+            if self.sample_edge(edge):
+                self.update_counters(self.ADD, edge)
+        elif edge in self.reservoir:
+            self.update_counters(self.REMOVE, edge)
+            self.reservoir.pop_edge(edge)
+            self.d_i += 1
+        else:
+            self.d_o += 1
+
+    def sample_edge(self, edge):
+        if self.d_o + self.d_i == 0:
+            if len(self.reservoir) < self.size:
+                self.reservoir.put_edge(edge)
+                return True
+            if with_probability(self.size / self.t):
+                remove_edge = random.sample(self.reservoir.edges, 1)[0]
+                self.update_counters(self.REMOVE, remove_edge)
+                self.reservoir.pop_edge(remove_edge)
+                self.reservoir.put_edge(edge)
+                return True
+            # return False, or if below !?
+        elif with_probability(self.d_i / (self.d_i + self.d_o)):
+            self.reservoir.put_edge(edge)
+            self.d_i -= 1
+            return True
+        else:
+            self.d_o -= 1
+            return False
+
+    def get_estimated_num_triangles(self, node=None):
+        if self.size < 3:
+            return 0  # special case for completeness
+        if node is not None:
+            if node not in self.tau_node:
+                return 0.
+            tau = self.tau_node[node]
+        else:
+            tau = self.tau
+
+        s = self.s
+        M = self.size
+        return tau / self.kappa * (
+            s * (s - 1) * (s - 2) / (M * (M - 1) * (M - 2))
+        )
+
+    @property
+    def kappa(self):
+        d_o = self.d_o
+        d_i = self.d_i
+        s = self.s
+        M = self.size
+        omega = min(M, s + d_i + d_o)
+        return 1 - sum([
+            binomial(s, j) * binomial(d_i + d_o, omega - j) / (s + d_o + d_i)
+            for j in range(3)
+        ])
+
+    def reset(self):
+        super(TriestFD, self).reset()
+        self.d_o = 0
+        self.d_i = 0
+        self.s = 0

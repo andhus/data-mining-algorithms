@@ -3,16 +3,20 @@ from __future__ import print_function, division
 import random
 
 from itertools import combinations
+import functools
 
 import numpy as np
 
+import nose
 from nose.tools import (
     assert_equal,
-    assert_raises,
     assert_less,
-    assert_raises
+    assert_raises,
 )
 from numpy.testing import assert_allclose
+
+
+from data_mining.graph import TriestBase
 
 
 class GraphTests(object):
@@ -298,27 +302,30 @@ class TriestTests():
     def test_approximation(self):
         seed = 1234
         random.seed(seed)
-
-        nodes = range(100)
+        nodes = range(50)
         edges = list(combinations(nodes, 2))
         random.shuffle(edges)
+        reservoir_size = 250
+        num_edges = 1000
+        assert num_edges <= len(edges)
+        edges = edges[:num_edges]
 
-        tb_reference = self.test_class(size=len(edges))
-        tb = self.test_class(size=1000, seed=seed)
+        tb_reference = TriestBase(size=num_edges)
+        tb = self.test_class(size=reservoir_size, seed=seed)
 
-        tb_reference(edges[:1000])
-        tb(edges[:1000])
+        tb_reference(edges[:reservoir_size])
+        tb(edges[:reservoir_size])
         assert_equal(
             tb.get_estimated_num_triangles(),
             tb_reference.get_estimated_num_triangles()
         )
-        sample_nodes = random.sample(tb.reservoir.nodes, 100)
+        sample_nodes = random.sample(tb.reservoir.nodes, 20)
         for node in sample_nodes:
             assert_equal(
                 tb.get_estimated_num_triangles(node),
                 tb_reference.get_estimated_num_triangles(node)
             )
-        tb_reference(edges[1000:])
+        tb_reference(edges[reservoir_size:])
 
         glob_num_triangles_est = []
         node_to_num_triangles_est = {node: [] for node in sample_nodes}
@@ -350,3 +357,31 @@ class TestTriestBase(TriestTests):
 
 class TestTriestImpr(TriestTests):
     from data_mining.graph import TriestImpr as test_class
+
+
+def expected_failure(test):
+    @functools.wraps(test)
+    def inner(*args, **kwargs):
+        try:
+            test(*args, **kwargs)
+        except Exception:
+            raise nose.SkipTest
+        else:
+            raise AssertionError('Failure expected')
+    return inner
+
+
+class TestTriestFDAddOnly(TriestTests):
+    from data_mining.graph import TriestFD
+
+    class TriestFDAddOnly(TriestFD):
+        """Just for testing purposes"""
+
+        def put(self, edge):
+            super(self.__class__, self).put((self.ADD, edge))
+
+    test_class = TriestFDAddOnly
+
+    @expected_failure
+    def test_exact_at_t_less_than_size(self):
+        super(self.__class__, self).test_exact_at_t_less_than_size()

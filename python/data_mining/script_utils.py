@@ -97,25 +97,26 @@ def get_frequent_itemsets_argument_parser(
 def get_trieste_args_parser(
     reservoir_size=1000,
     limit=10000,
-    seed=0
+    seed=0,
+    description=None
 ):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         '-s', '--reservoir-size',
         type=int,
         default=reservoir_size,
-        help='Size of the edge reservoir in the estimator')
+        help='Size of the edge reservoir in the estimator.')
     parser.add_argument(
         '-l', '--limit',
         type=int,
         default=limit,
-        help='Only process this number of (first) items of the stream'
+        help='Only process this number of (first) items of the stream.'
     )
     parser.add_argument(
         '--seed',
         type=int,
         default=seed,
-        help='Seed for random number generation'
+        help='Seed for random number generation.'
     )
 
     return parser
