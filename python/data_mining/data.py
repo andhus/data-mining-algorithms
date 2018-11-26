@@ -74,7 +74,7 @@ def get_news_groups_documents(mini=False, first_n=None, auto_download=True):
         mini (bool): If True, use the "mini" version of the dataset.
         first_n (int|None): If provided, limit the number of documents to this
             number.
-        auto_download (bool): If True and data can be found it is automatically
+        auto_download (bool): If True and data can't be found it is automatically
             downloaded.
 
     Returns:
@@ -112,7 +112,7 @@ def get_frequent_itemset(first_n=None, auto_download=True):
     Args:
         first_n (int | None): If provided, limit the number of baskets to this
             number.
-        auto_download (bool): If True and data can be found it is automatically
+        auto_download (bool): If True and data can't be found it is automatically
             downloaded.
 
     Returns:
@@ -135,4 +135,55 @@ def get_frequent_itemset(first_n=None, auto_download=True):
         filepath,
         limit=first_n,
         postprocess=lambda line: tuple([int(v) for v in line.split()])
+    )
+
+
+def get_facebook_links(first_n=None, auto_download=True, unique=True):
+    """Simulated stream of edges in a Facebook (undirected) friends graph. For more
+    info see: http://socialnetworks.mpi-sws.org/data-wosn2009.html.
+
+    Args:
+        first_n (int | None): If provided, limit the number of edges to this
+            number.
+        auto_download (bool): If True and data can't be found it is automatically
+            downloaded.
+        unique (bool): If true the links are deduplicated in a preprocessing step.
+
+    Returns:
+        Iterator(tuple(int, int)): Each item represents one edge between the two
+            nodes item[0] <-> item[1].
+    """
+    org_filepath = os.path.join(
+        DEFAULT_DATA_PATH,
+        'FacebookLinks',
+        'facebook-links.txt'
+    )
+    _require_dataset(
+        name='FacebookLinks',
+        filepath=org_filepath,
+        script='download_facebook_links.sh',
+        auto_download=auto_download
+    )
+    unique_filepath = os.path.join(
+        DEFAULT_DATA_PATH,
+        'FacebookLinks',
+        'facebook-links-unique.txt'
+    )
+    post_process_f = lambda line: tuple(
+        sorted([int(v) for v in line.split()[:2]])
+    )
+    if unique and not os.path.exists(unique_filepath):
+        seen =set([])
+        with open(org_filepath) as f_org:
+            with open(unique_filepath, 'w') as f_unique:
+                for line in f_org:
+                    res = post_process_f(line)
+                    if res not in seen:
+                        seen.add(res)
+                        f_unique.write(line)
+
+    return LinesIterator(
+        org_filepath if not unique else unique_filepath,
+        limit=first_n,
+        postprocess=post_process_f
     )
